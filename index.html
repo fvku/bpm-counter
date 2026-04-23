@@ -340,13 +340,13 @@
 
   <div class="controls">
     <div class="tap-row">
-      <button class="adj-btn" onmousedown="adjustBpm(-1)" ontouchstart="adjustBpm(-1)">−</button>
+      <button class="adj-btn" onmousedown="adjustBpm(-1)" ontouchstart="event.preventDefault();adjustBpm(-1)">−</button>
       <button class="tap-btn" id="tapBtn"
         onmousedown="handleTap()" ontouchstart="handleTap(event)">
         TAP
         <span class="tap-hint">SPACE KEY</span>
       </button>
-      <button class="adj-btn" onmousedown="adjustBpm(+1)" ontouchstart="adjustBpm(+1)">+</button>
+      <button class="adj-btn" onmousedown="adjustBpm(+1)" ontouchstart="event.preventDefault();adjustBpm(+1)">+</button>
     </div>
 
     <button class="mic-btn" id="micBtn" onclick="toggleMic()">
@@ -380,7 +380,7 @@
     let currentBpm = null;
     let tickIndex = 0;   // counts half-beats: even = main dot, odd = half mark
     let beatInterval = null;
-    let history = JSON.parse(localStorage.getItem('bpmHistory') || '[]');
+    let history = [];
     let historyBpmBuffer = [];
 
     // ── Beat elements ──
@@ -451,9 +451,6 @@
       renderHistory();
     }
 
-    function saveHistory() {
-      localStorage.setItem('bpmHistory', JSON.stringify(history));
-    }
 
     function renderHistory() {
       const list = document.getElementById('historyList');
@@ -481,11 +478,8 @@
       document.getElementById('bpmDisplay').textContent = '--';
       beatDots.forEach(d => d.classList.remove('active'));
       halfMarks.forEach(h => h.classList.remove('active'));
-      saveHistory();
     }
 
-    // ── Init ──
-    renderHistory();
 
     // ── Tap ──
     function handleTap(e) {
