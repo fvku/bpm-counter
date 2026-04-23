@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BPM</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0a;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      gap: 16px;
+    }
+
+    /* ── BPM Number ── */
+    .bpm-wrap {
+      text-align: center;
+      line-height: 1;
+    }
+
+    #bpmDisplay {
+      font-size: clamp(5rem, 20vw, 9rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #fff;
+      display: inline-block;
+      transition: transform 0.06s ease;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #bpmDisplay.pulse { transform: scale(1.04); }
+
+    .bpm-label {
+      font-size: 0.9rem;
+      letter-spacing: 0.25em;
+      color: #444;
+      margin-top: 6px;
+      text-transform: uppercase;
+    }
+
+    /* ── Beat dots ── */
+    .beat-bar {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .beat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #222;
+      transition: background 0.08s, box-shadow 0.08s;
+      flex-shrink: 0;
+    }
+
+    .beat-dot.active {
+      background: #fff;
+      box-shadow: 0 0 8px rgba(255,255,255,0.5);
+    }
+
+    .half-mark {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #1e1e1e;
+      line-height: 1;
+      transition: color 0.07s;
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    .half-mark.active {
+      color: #fff;
+      text-shadow: 0 0 8px rgba(255,255,255,0.5);
+    }
+
+    /* ── Controls row ── */
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    /* ── Tap row ── */
+    .tap-row {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 56px 1fr 56px;
+      gap: 8px;
+    }
+
+    /* ── Tap button ── */
+    .tap-btn {
+      padding: 36px 20px;
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: #fff;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 14px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.08s, border-color 0.08s, transform 0.06s;
+    }
+
+    .tap-btn:active,
+    .tap-btn.pressed {
+      background: #222;
+      border-color: #fff;
+      transform: scale(0.98);
+    }
+
+    .tap-hint {
+      display: block;
+      font-size: 0.65rem;
+      font-weight: 400;
+      color: #333;
+      margin-top: 6px;
+      letter-spacing: 0.1em;
+    }
+
+    /* ── ±1 buttons ── */
+    .adj-btn {
+      padding: 0;
+      font-size: 1.6rem;
+      font-weight: 300;
+      color: #444;
+      background: #111;
+      border: 1px solid #1e1e1e;
+      border-radius: 14px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: color 0.1s, border-color 0.1s, transform 0.06s;
+      line-height: 1;
+    }
+
+    .adj-btn:hover { color: #aaa; border-color: #333; }
+    .adj-btn:active { color: #fff; border-color: #fff; transform: scale(0.94); }
+
+    /* ── Mic button ── */
+    .mic-btn {
+      padding: 18px 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: #888;
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mic-btn:hover { border-color: #444; color: #bbb; }
+
+    .mic-btn.listening {
+      border-color: #555;
+      color: #fff;
+      background: #161616;
+    }
+
+    .mic-icon { font-size: 1.3rem; }
+
+    /* Volume bar */
+    .vol-wrap {
+      width: 100%;
+      height: 3px;
+      background: #1e1e1e;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .vol-bar {
+      height: 100%;
+      width: 0%;
+      background: #fff;
+      border-radius: 2px;
+      transition: width 0.05s;
+    }
+
+    /* Sensitivity */
+    .sens-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .sens-label {
+      font-size: 0.65rem;
+      color: #333;
+      white-space: nowrap;
+      letter-spacing: 0.08em;
+    }
+
+    input[type=range] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 3px;
+      background: #222;
+      border-radius: 2px;
+      outline: none;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #888;
+      cursor: pointer;
+    }
+
+    .sens-val { font-size: 0.65rem; color: #555; min-width: 16px; text-align: right; }
+
+    /* ── Reset button ── */
+    .reset-btn {
+      padding: 18px 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: #333;
+      background: #111;
+      border: 1px solid #1a1a1a;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+
+    .reset-btn:hover { border-color: #333; color: #666; }
+
+    /* ── History ── */
+    .history {
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .history-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.18em;
+      color: #2a2a2a;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    .history-list::-webkit-scrollbar { width: 3px; }
+    .history-list::-webkit-scrollbar-track { background: transparent; }
+    .history-list::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
+
+    .history-item {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 7px 10px;
+      background: #0f0f0f;
+      border-radius: 8px;
+      animation: fadeIn 0.15s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .h-bpm {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #ccc;
+      font-variant-numeric: tabular-nums;
+      min-width: 50px;
+    }
+
+    .h-unit { font-size: 0.6rem; color: #333; font-weight: 400; }
+    .h-src { font-size: 0.6rem; color: #333; margin-left: auto; }
+    .h-time { font-size: 0.6rem; color: #2a2a2a; min-width: 50px; text-align: right; }
+
+    .history-empty {
+      font-size: 0.7rem;
+      color: #222;
+      text-align: center;
+      padding: 16px 0;
+      letter-spacing: 0.05em;
+    }
+
+    @media (max-width: 400px) {
+      .controls { grid-template-columns: 1fr; }
+      .tap-btn { grid-column: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bpm-wrap">
+    <div id="bpmDisplay">--</div>
+    <div class="bpm-label">BPM</div>
+  </div>
+
+  <div class="beat-bar" id="beatBar">
+    <div class="beat-dot"></div><span class="half-mark">+</span>
+    <div class="beat-dot"></div><span class="half-mark">+</span>
+    <div class="beat-dot"></div><span class="half-mark">+</span>
+    <div class="beat-dot"></div><span class="half-mark">+</span>
+    <div class="beat-dot"></div><span class="half-mark">+</span>
+    <div class="beat-dot"></div><span class="half-mark">+</span>
+    <div class="beat-dot"></div><span class="half-mark">+</span>
+    <div class="beat-dot"></div><span class="half-mark">+</span>
+  </div>
+
+  <div class="controls">
+    <div class="tap-row">
+      <button class="adj-btn" onmousedown="adjustBpm(-1)" ontouchstart="adjustBpm(-1)">−</button>
+      <button class="tap-btn" id="tapBtn"
+        onmousedown="handleTap()" ontouchstart="handleTap(event)">
+        TAP
+        <span class="tap-hint">SPACE KEY</span>
+      </button>
+      <button class="adj-btn" onmousedown="adjustBpm(+1)" ontouchstart="adjustBpm(+1)">+</button>
+    </div>
+
+    <button class="mic-btn" id="micBtn" onclick="toggleMic()">
+      <span class="mic-icon">●</span>
+      <span id="micBtnText">MIC</span>
+      <div class="vol-wrap"><div class="vol-bar" id="volumeBar"></div></div>
+      <div class="sens-row">
+        <span class="sens-label">SENS</span>
+        <input type="range" id="sensitivity" min="1" max="10" value="5"
+          oninput="updateSensitivity(this.value)" onclick="e=>e.stopPropagation()">
+        <span class="sens-val" id="sensVal">5</span>
+      </div>
+    </button>
+
+    <button class="reset-btn" onclick="resetAll()">RESET</button>
+  </div>
+
+  <div class="history">
+    <div class="history-label">HISTORY</div>
+    <div class="history-list" id="historyList">
+      <div class="history-empty" id="historyEmpty">—</div>
+    </div>
+  </div>
+
+  <script>
+    // ── State ──
+    let tapTimes = [];
+    const MAX_TAP = 12;
+    const TAP_TIMEOUT = 3000;
+    let tapTimer = null;
+    let currentBpm = null;
+    let tickIndex = 0;   // counts half-beats: even = main dot, odd = half mark
+    let beatInterval = null;
+    let history = [];
+    let historyBpmBuffer = [];
+
+    // ── Beat elements ──
+    const beatDots   = document.querySelectorAll('.beat-dot');
+    const halfMarks  = document.querySelectorAll('.half-mark');
+    const NUM_DOTS   = beatDots.length;       // 8
+    const NUM_HALVES = halfMarks.length;      // 7
+    const TOTAL_TICKS = NUM_DOTS * 2;         // 16 half-beats per loop
+
+    function flashBeat() {
+      const isMain = (tickIndex % 2 === 0);
+      const idx    = Math.floor(tickIndex / 2) % NUM_DOTS;
+
+      if (isMain) {
+        beatDots.forEach(d => d.classList.remove('active'));
+        beatDots[idx].classList.add('active');
+        halfMarks.forEach(h => h.classList.remove('active'));
+        const el = document.getElementById('bpmDisplay');
+        el.classList.add('pulse');
+        setTimeout(() => el.classList.remove('pulse'), 80);
+      } else {
+        // half-beat: flash the mark between previous dot and current dot
+        halfMarks.forEach(h => h.classList.remove('active'));
+        const hIdx = Math.floor(tickIndex / 2) % NUM_HALVES;
+        if (hIdx < NUM_HALVES) halfMarks[hIdx].classList.add('active');
+      }
+
+      tickIndex = (tickIndex + 1) % TOTAL_TICKS;
+    }
+
+    function startBeatAnim(bpm, resetPhase = false) {
+      if (beatInterval) clearInterval(beatInterval);
+      if (!bpm || bpm <= 0) return;
+      if (resetPhase) {
+        tickIndex = 0;
+        beatDots.forEach(d => d.classList.remove('active'));
+        halfMarks.forEach(h => h.classList.remove('active'));
+      }
+      // interval = half a beat
+      beatInterval = setInterval(flashBeat, (60 / bpm / 2) * 1000);
+    }
+
+    // ── Display ──
+    function updateBpmDisplay(bpm, source, resetPhase = false) {
+      if (!bpm) return;
+      const rounded = Math.round(bpm);
+      currentBpm = rounded;
+      document.getElementById('bpmDisplay').textContent = rounded;
+      startBeatAnim(rounded, resetPhase);
+      addHistory(rounded, source);
+    }
+
+    // ── Manual ±1 adjust ──
+    function adjustBpm(delta) {
+      if (!currentBpm) return;
+      const next = Math.max(20, Math.min(300, currentBpm + delta));
+      currentBpm = next;
+      document.getElementById('bpmDisplay').textContent = next;
+      startBeatAnim(next);
+    }
+
+    // ── History ──
+    function addHistory(bpm, source) {
+      const now = new Date();
+      const t = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      history.unshift({ bpm, source, time: t });
+      if (history.length > 20) history.pop();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const list = document.getElementById('historyList');
+      if (history.length === 0) {
+        list.innerHTML = '<div class="history-empty" id="historyEmpty">—</div>';
+        return;
+      }
+      list.innerHTML = history.map(h => `
+        <div class="history-item">
+          <span class="h-bpm">${h.bpm}<span class="h-unit"> BPM</span></span>
+          <span class="h-src">${h.source === 'tap' ? 'TAP' : 'MIC'}</span>
+          <span class="h-time">${h.time}</span>
+        </div>`).join('');
+    }
+
+    // ── Reset ──
+    function resetAll() {
+      tapTimes = [];
+      historyBpmBuffer = [];
+      if (tapTimer) clearTimeout(tapTimer);
+      if (beatInterval) clearInterval(beatInterval);
+      beatInterval = null;
+      currentBpm = null;
+      tickIndex = 0;
+      document.getElementById('bpmDisplay').textContent = '--';
+      beatDots.forEach(d => d.classList.remove('active'));
+      halfMarks.forEach(h => h.classList.remove('active'));
+    }
+
+    // ── Tap ──
+    function handleTap(e) {
+      if (e) e.preventDefault();
+      const now = Date.now();
+      tapTimes.push(now);
+      tapTimes = tapTimes.filter(t => now - t < TAP_TIMEOUT);
+      if (tapTimes.length > MAX_TAP) tapTimes = tapTimes.slice(-MAX_TAP);
+
+      if (tapTimes.length >= 2) {
+        const intervals = [];
+        for (let i = 1; i < tapTimes.length; i++) intervals.push(tapTimes[i] - tapTimes[i - 1]);
+        const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+        const bpm = 60000 / avg;
+        if (bpm >= 20 && bpm <= 300) updateBpmDisplay(bpm, 'tap', true);
+      }
+
+      if (tapTimer) clearTimeout(tapTimer);
+      tapTimer = setTimeout(() => { tapTimes = []; }, TAP_TIMEOUT);
+
+      // タップのタイミングで拍を1拍目にリセット
+      tickIndex = 0;
+      beatDots.forEach(d => d.classList.remove('active'));
+      halfMarks.forEach(h => h.classList.remove('active'));
+      flashBeat();
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.code === 'Space' && e.target === document.body) {
+        e.preventDefault();
+        handleTap();
+      }
+    });
+
+    // ── Mic ──
+    let audioCtx = null, analyser = null, micStream = null;
+    let micActive = false, animFrame = null, sensitivityVal = 5;
+    let prevEnergy = 0, beatTimes = [], lastBeatTime = 0;
+    const MIN_BEAT_INTERVAL = 200;
+
+    function updateSensitivity(val) {
+      sensitivityVal = parseInt(val);
+      document.getElementById('sensVal').textContent = val;
+    }
+
+    async function toggleMic() {
+      micActive ? stopMic() : await startMic();
+    }
+
+    async function startMic() {
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 512;
+        analyser.smoothingTimeConstant = 0.4;
+        audioCtx.createMediaStreamSource(micStream).connect(analyser);
+        micActive = true;
+        document.getElementById('micBtn').classList.add('listening');
+        document.getElementById('micBtnText').textContent = 'STOP';
+        processMic();
+      } catch {
+        document.getElementById('micBtnText').textContent = 'ERROR';
+      }
+    }
+
+    function stopMic() {
+      micActive = false;
+      if (animFrame) cancelAnimationFrame(animFrame);
+      if (micStream) micStream.getTracks().forEach(t => t.stop());
+      if (audioCtx) audioCtx.close();
+      audioCtx = analyser = micStream = null;
+      beatTimes = [];
+      document.getElementById('micBtn').classList.remove('listening');
+      document.getElementById('micBtnText').textContent = 'MIC';
+      document.getElementById('volumeBar').style.width = '0%';
+    }
+
+    function processMic() {
+      if (!micActive) return;
+      const buf = new Uint8Array(analyser.frequencyBinCount);
+
+      (function loop() {
+        if (!micActive) return;
+        animFrame = requestAnimationFrame(loop);
+        analyser.getByteTimeDomainData(buf);
+
+        let sum = 0;
+        for (let i = 0; i < buf.length; i++) { const v = (buf[i] - 128) / 128; sum += v * v; }
+        const energy = Math.sqrt(sum / buf.length) * 100;
+
+        document.getElementById('volumeBar').style.width = Math.min(energy * 5, 100) + '%';
+
+        const threshold = 1.5 + (10 - sensitivityVal) * 0.4;
+        const now = Date.now();
+
+        if (energy > prevEnergy * threshold && energy > 1.5 && now - lastBeatTime > MIN_BEAT_INTERVAL) {
+          lastBeatTime = now;
+          beatTimes.push(now);
+          beatTimes = beatTimes.filter(t => now - t < 5000);
+          flashBeat();
+
+          if (beatTimes.length >= 4) {
+            const ivs = [];
+            for (let i = 1; i < beatTimes.length; i++) ivs.push(beatTimes[i] - beatTimes[i - 1]);
+            ivs.sort((a, b) => a - b);
+            const mid = Math.floor(ivs.length / 2);
+            const median = ivs.length % 2 ? ivs[mid] : (ivs[mid-1] + ivs[mid]) / 2;
+            const bpm = 60000 / median;
+            if (bpm >= 40 && bpm <= 250) {
+              historyBpmBuffer.push(bpm);
+              if (historyBpmBuffer.length > 4) historyBpmBuffer.shift();
+              updateBpmDisplay(historyBpmBuffer.reduce((a,b)=>a+b,0)/historyBpmBuffer.length, 'mic');
+            }
+          }
+        }
+        prevEnergy = energy;
+      })();
+    }
+  </script>
+</body>
+</html>
