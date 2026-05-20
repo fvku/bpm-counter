@@ -773,7 +773,7 @@
       const tbody = document.getElementById('polyTableBody');
       if (tbody.children.length === 0) {
         let html = '';
-        const ANCHORS = new Set([70,80,90,100,110,120,128,130,140,150,160,170,180,190,200]);
+        const ANCHORS = new Set([70,80,90,100,110,120,130,140,150,160,170,180,190,200]);
         for (let bpm = 60; bpm <= 200; bpm++) {
           const cls = ANCHORS.has(bpm) ? ' class="anchor"' : '';
           html += `<tr${cls} data-bpm="${bpm}"><td>${bpm}</td>${ratios.map(r => `<td>${(bpm * r).toFixed(1)}</td>`).join('')}</tr>`;
