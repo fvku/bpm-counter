@@ -358,38 +358,28 @@
 
     .poly-modal.open { display: flex; }
 
-    .poly-inner {
-      flex: 1;
-      overflow-y: auto;
-      padding: 24px 20px 40px;
-      max-width: 520px;
-      margin: 0 auto;
-      width: 100%;
-    }
-
-    .poly-inner::-webkit-scrollbar { width: 3px; }
-    .poly-inner::-webkit-scrollbar-track { background: transparent; }
-    .poly-inner::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
-
     .poly-header {
+      flex-shrink: 0;
+      height: 48px;
+      border-bottom: 1px solid #1a1a1a;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      padding: 0 20px;
     }
 
     .poly-title {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       font-weight: 700;
       letter-spacing: 0.2em;
-      color: #444;
+      color: #555;
       text-transform: uppercase;
     }
 
     .poly-close {
       font-size: 1.6rem;
       line-height: 1;
-      color: #333;
+      color: #444;
       background: none;
       border: none;
       cursor: pointer;
@@ -399,25 +389,18 @@
 
     .poly-close:hover { color: #fff; }
 
-    .poly-ratios {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 24px;
+    .poly-table-wrap {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 20px;
+      max-width: 520px;
+      width: 100%;
+      margin: 0 auto;
     }
 
-    .poly-ratio-item {
-      background: #0f0f0f;
-      border: 1px solid #1a1a1a;
-      border-radius: 10px;
-      padding: 12px;
-    }
-
-    .poly-ratio-name { font-size: 0.65rem; color: #555; letter-spacing: 0.06em; margin-bottom: 4px; }
-    .poly-ratio-val { font-size: 1.1rem; font-weight: 700; color: #aaa; font-variant-numeric: tabular-nums; }
-    .poly-ratio-desc { font-size: 0.58rem; color: #333; margin-top: 6px; line-height: 1.5; }
-
-    .poly-table-wrap { overflow-x: auto; }
+    .poly-table-wrap::-webkit-scrollbar { width: 3px; }
+    .poly-table-wrap::-webkit-scrollbar-track { background: transparent; }
+    .poly-table-wrap::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
 
     .poly-table {
       width: 100%;
@@ -427,11 +410,11 @@
 
     .poly-table th {
       text-align: right;
-      font-size: 0.58rem;
+      font-size: 0.6rem;
       letter-spacing: 0.06em;
-      color: #333;
-      padding: 8px 10px;
-      border-bottom: 1px solid #1a1a1a;
+      color: #666;
+      padding: 10px 10px;
+      border-bottom: 1px solid #222;
       position: sticky;
       top: 0;
       background: #080808;
@@ -442,13 +425,13 @@
 
     .poly-table td {
       text-align: right;
-      font-size: 0.78rem;
-      padding: 6px 10px;
-      color: #2e2e2e;
-      border-bottom: 1px solid #0f0f0f;
+      font-size: 0.9rem;
+      padding: 7px 10px;
+      color: #777;
+      border-bottom: 1px solid #111;
     }
 
-    .poly-table td:first-child { color: #444; font-weight: 700; }
+    .poly-table td:first-child { color: #ccc; font-weight: 700; }
 
     .poly-table tr.highlight td { color: #aaa; background: #111; }
     .poly-table tr.highlight td:first-child { color: #fff; }
@@ -509,25 +492,24 @@
   </div>
 
   <div class="poly-modal" id="polyModal">
-    <div class="poly-inner">
-      <div class="poly-header">
-        <span class="poly-title">BPM Polyrhythm Reference</span>
-        <button class="poly-close" onclick="closePoly()">×</button>
-      </div>
-<div class="poly-table-wrap">
-        <table class="poly-table">
-          <thead>
-            <tr>
-              <th>BPM</th>
-              <th>×3/2<br>2拍三連</th>
-              <th>×4/3<br>4:3</th>
-              <th>×2/3<br>逆三連</th>
-              <th>×3/4<br>逆4:3</th>
-            </tr>
-          </thead>
-          <tbody id="polyTableBody"></tbody>
-        </table>
-      </div>
+    <div class="poly-header">
+      <span class="poly-title">BPM Polyrhythm Reference</span>
+      <button class="poly-close" onclick="closePoly()">×</button>
+    </div>
+    <div class="poly-table-wrap" id="polyTableWrap">
+      <table class="poly-table">
+        <thead>
+          <tr>
+            <th>BPM</th>
+            <th>×3/2<br>2拍三連</th>
+            <th>×4/3<br>4:3</th>
+            <th>×2/3<br>逆三連</th>
+            <th>×3/4<br>逆4:3</th>
+          </tr>
+        </thead>
+        <tbody id="polyTableBody"></tbody>
+      </table>
+      <div style="height: 48px"></div>
     </div>
   </div>
 
@@ -788,18 +770,22 @@
       const tbody = document.getElementById('polyTableBody');
       if (tbody.children.length === 0) {
         let html = '';
-        for (let bpm = 70; bpm <= 170; bpm++) {
+        for (let bpm = 60; bpm <= 200; bpm++) {
           html += `<tr data-bpm="${bpm}"><td>${bpm}</td>${ratios.map(r => `<td>${(bpm * r).toFixed(1)}</td>`).join('')}</tr>`;
         }
         tbody.innerHTML = html;
       }
-      if (currentBpm && currentBpm >= 70 && currentBpm <= 170) {
+      const wrap = document.getElementById('polyTableWrap');
+      const theadH = document.querySelector('.poly-table thead').offsetHeight;
+      if (currentBpm && currentBpm >= 60 && currentBpm <= 200) {
         const row = tbody.querySelector(`tr[data-bpm="${currentBpm}"]`);
         if (row) {
           tbody.querySelectorAll('tr').forEach(r => r.classList.remove('highlight'));
           row.classList.add('highlight');
-          setTimeout(() => row.scrollIntoView({ block: 'center' }), 50);
+          wrap.scrollTop = row.offsetTop - theadH;
         }
+      } else {
+        wrap.scrollTop = 0;
       }
     }
 
