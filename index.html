@@ -421,17 +421,17 @@
       text-transform: uppercase;
     }
 
-    .poly-table th:first-child { text-align: left; }
+    .poly-table th:first-child { text-align: right; }
 
     .poly-table td {
       text-align: right;
-      font-size: 0.9rem;
+      font-size: 1.0rem;
       padding: 7px 10px;
       color: #777;
       border-bottom: 1px solid #111;
     }
 
-    .poly-table td:first-child { color: #ccc; font-weight: 700; }
+    .poly-table td:first-child { color: #ccc; font-weight: 700; font-size: 1.05rem; }
 
     .poly-table tr.highlight td { color: #aaa; background: #111; }
     .poly-table tr.highlight td:first-child { color: #fff; }
@@ -520,6 +520,7 @@
     const TAP_TIMEOUT = 3000;
     let tapTimer = null;
     let currentBpm = null;
+    let lastSource = 'tap';
     let tickIndex = 0;   // counts half-beats: even = main dot, odd = half mark
     let beatInterval = null;
     let history = [];
@@ -560,6 +561,7 @@
         tickIndex = 0;
         beatDots.forEach(d => d.classList.remove('active'));
         halfMarks.forEach(h => h.classList.remove('active'));
+        flashBeat();
       }
       // interval = half a beat
       beatInterval = setInterval(flashBeat, (60 / bpm / 2) * 1000);
@@ -570,9 +572,9 @@
       if (!bpm) return;
       const rounded = Math.round(bpm);
       currentBpm = rounded;
+      lastSource = source;
       document.getElementById('bpmDisplay').textContent = rounded;
       startBeatAnim(rounded, resetPhase);
-      addHistory(rounded, source);
     }
 
     // ── Manual ±1 adjust ──
@@ -595,7 +597,7 @@
       const next = Math.max(20, Math.min(300, currentBpm + delta));
       currentBpm = next;
       document.getElementById('bpmDisplay').textContent = next;
-      startBeatAnim(next);
+      startBeatAnim(next, true);
     }
 
     // ── History ──
@@ -624,6 +626,7 @@
 
     // ── Reset ──
     function resetAll() {
+      if (currentBpm) addHistory(currentBpm, lastSource);
       tapTimes = [];
       historyBpmBuffer = [];
       if (tapTimer) clearTimeout(tapTimer);
