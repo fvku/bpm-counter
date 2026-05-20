@@ -433,8 +433,8 @@
 
     .poly-table td:first-child { color: #ccc; font-weight: 700; font-size: 1.05rem; }
 
-    .poly-table tr.highlight td { color: #aaa; background: #111; }
-    .poly-table tr.highlight td:first-child { color: #fff; }
+    .poly-table tr.anchor td { background: #1a1a1a; }
+    .poly-table tr.anchor td:first-child { color: #fff; }
   </style>
 </head>
 <body>
@@ -773,23 +773,14 @@
       const tbody = document.getElementById('polyTableBody');
       if (tbody.children.length === 0) {
         let html = '';
+        const ANCHORS = new Set([70,80,90,100,110,120,128,130,140,150,160,170,180,190,200]);
         for (let bpm = 60; bpm <= 200; bpm++) {
-          html += `<tr data-bpm="${bpm}"><td>${bpm}</td>${ratios.map(r => `<td>${(bpm * r).toFixed(1)}</td>`).join('')}</tr>`;
+          const cls = ANCHORS.has(bpm) ? ' class="anchor"' : '';
+          html += `<tr${cls} data-bpm="${bpm}"><td>${bpm}</td>${ratios.map(r => `<td>${(bpm * r).toFixed(1)}</td>`).join('')}</tr>`;
         }
         tbody.innerHTML = html;
       }
-      const wrap = document.getElementById('polyTableWrap');
-      const theadH = document.querySelector('.poly-table thead').offsetHeight;
-      if (currentBpm && currentBpm >= 60 && currentBpm <= 200) {
-        const row = tbody.querySelector(`tr[data-bpm="${currentBpm}"]`);
-        if (row) {
-          tbody.querySelectorAll('tr').forEach(r => r.classList.remove('highlight'));
-          row.classList.add('highlight');
-          wrap.scrollTop = row.offsetTop - theadH;
-        }
-      } else {
-        wrap.scrollTop = 0;
-      }
+      document.getElementById('polyTableWrap').scrollTop = 0;
     }
 
     document.addEventListener('keydown', e => {
